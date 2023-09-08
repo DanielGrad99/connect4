@@ -143,3 +143,25 @@ bool Board::isWinningUpRight(int pos) {
 
     return true;
 }
+
+std::string to_string(const Board &board) {
+    char ret[BOARD_WIDTH * BOARD_HEIGHT];
+    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
+        switch (board.mBoard[i]) {
+        case Piece::NONE:
+            ret[i] = ' ';
+            break;
+        case Piece::RED:
+            ret[i] = 'R';
+            break;
+        case Piece::BLUE:
+            ret[i] = 'B';
+            break;
+        default:
+            assert(false);
+            break;
+        }
+    }
+
+    return ret;
+}

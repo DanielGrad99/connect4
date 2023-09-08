@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #define BOARD_WIDTH 7
 #define BOARD_HEIGHT 6
 #define NUM_IN_A_ROW 4
@@ -43,4 +45,6 @@ class Board {
     bool isWinningUp(int pos);
     bool isWinningRight(int pos);
     bool isWinningUpRight(int pos);
+
+    friend std::string to_string(const Board &board);
 };

@@ -7,7 +7,7 @@
 #define NUM_IN_A_ROW 4
 
 enum class Piece { NONE, RED, BLUE };
-enum GameState { PLAYING, TIE, BLUE_WON, RED_WON};
+enum GameState { PLAYING, TIE, BLUE_WON, RED_WON };
 
 /*
 
@@ -32,20 +32,32 @@ class Board {
 
     Piece GetPiece(int row, int col) const;
 
+    // Game control
     void NewGame();
     GameState IsGameOver() const;
     bool PlacePiece(Piece piece, int column);  // column is in [0, 6]
 
+    friend std::string to_string(const Board &board);
+
    private:
     Piece mBoard[BOARD_WIDTH * BOARD_HEIGHT] = {Piece::NONE};
 
-    int getPieceAbove(int pos) const;  // -1 if not found
-    int getPieceRight(int pos) const;  // -1 if not found
     bool isBottomLeftMostStartOfWinning(int pos) const;
 
     bool isWinningUp(int pos) const;
     bool isWinningRight(int pos) const;
     bool isWinningUpRight(int pos) const;
 
-    friend std::string to_string(const Board &board);
+    bool isPieceWinning(int pos) const;
+    bool checkSequence(int pos, int (*getNext)(int), int (*getLast)(int)) const;
+
+    // Get next piece in direction
+    static int getPieceUp(int pos);
+    static int getPieceUpRight(int pos);
+    static int getPieceRight(int pos);
+    static int getPieceDownRight(int pos);
+    static int getPieceDown(int pos);
+    static int getPieceDownLeft(int pos);
+    static int getPieceLeft(int pos);
+    static int getPieceUpLeft(int pos);
 };

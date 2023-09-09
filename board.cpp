@@ -3,21 +3,18 @@
 #include <cassert>
 #include <utility>
 
-Board::Board() { NewGame(); }
-
-Board::~Board() {}
-
-Board::Board(const Board &other) {
-    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
-        mBoard[i] = other.mBoard[i];
-    }
+Board::Board() noexcept {
+    mBoard = new Piece[BOARD_WIDTH * BOARD_HEIGHT];
+    NewGame();
 }
 
-Board::Board(Board &&other) {
-    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
-        mBoard[i] = other.mBoard[i];
-    }
-}
+Board::~Board() noexcept { delete[] mBoard; }
+
+Board::Board(const Board &other) noexcept
+    : mBoard(allocateCopyOfBoard(other)) {}
+
+Board::Board(Board &&other) noexcept
+    : mBoard(std::exchange(other.mBoard, nullptr)) {}
 
 Board Board::FlipMe() const {
     Board board;
@@ -165,50 +162,86 @@ bool Board::isPieceWinning(int pos) const {
         return false;
     }
 
-    return checkSequence(pos, getPieceUp, getPieceDown) ||
-           checkSequence(pos, getPieceUpRight, getPieceDownLeft) ||
-           checkSequence(pos, getPieceRight, getPieceLeft) ||
-           checkSequence(pos, getPieceDownRight, getPieceUpLeft);
-}
-
-bool Board::checkSequence(int pos, int (*getNext)(int),
-                          int (*getLast)(int)) const {
-    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
-
-    Piece piece = mBoard[pos];
-    if (piece == Piece::NONE) {
-        return false;
-    }
-
-    int piecesInRow = 1;
     int originalPos = pos;
 
-    while (true) {
-        pos = getNext(pos);
-        if (pos == -1 || mBoard[pos] != piece) {
-            break;
-        }
+    int inRow = 1;
 
-        ++piecesInRow;
-        if (piecesInRow == NUM_IN_A_ROW) {
-            return true;
-        }
+    pos = getPieceUp(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceUp(pos);
+        ++inRow;
+    }
+    pos = getPieceDown(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceDown(pos);
+        ++inRow;
     }
 
-    pos = originalPos;
-    while (true) {
-        pos = getLast(pos);
-        if (pos == -1 || mBoard[pos] != piece) {
-            break;
-        }
+    if (inRow == NUM_IN_A_ROW) {
+        return true;
+    }
 
-        ++piecesInRow;
-        if (piecesInRow == NUM_IN_A_ROW) {
-            return true;
-        }
+    inRow = 1;
+
+    pos = getPieceUpRight(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceUpRight(pos);
+        ++inRow;
+    }
+    pos = getPieceDownLeft(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceDownLeft(pos);
+        ++inRow;
+    }
+
+    if (inRow == NUM_IN_A_ROW) {
+        return true;
+    }
+
+    inRow = 1;
+
+    pos = getPieceRight(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceRight(pos);
+        ++inRow;
+    }
+    pos = getPieceLeft(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceLeft(pos);
+        ++inRow;
+    }
+
+    if (inRow == NUM_IN_A_ROW) {
+        return true;
+    }
+
+    inRow = 1;
+
+    pos = getPieceDownRight(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceDownRight(pos);
+        ++inRow;
+    }
+    pos = getPieceUpLeft(originalPos);
+    while (piece == getPiece(pos) && inRow < NUM_IN_A_ROW) {
+        pos = getPieceUpLeft(pos);
+        ++inRow;
+    }
+
+    if (inRow == NUM_IN_A_ROW) {
+        return true;
     }
 
     return false;
+}
+
+Piece Board::getPiece(int pos) const {
+    if (pos == -1) {
+        return Piece::NONE;
+    }
+
+    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
+    return mBoard[pos];
 }
 
 int Board::getPieceUp(int pos) {
@@ -317,4 +350,11 @@ int Board::getPieceUpLeft(int pos) {
     }
 
     return pos;
+}
+
+Piece *Board::allocateCopyOfBoard(const Board &other) {
+    Piece *board = new Piece[BOARD_WIDTH * BOARD_HEIGHT];
+    std::copy(other.mBoard, other.mBoard + BOARD_WIDTH * BOARD_HEIGHT, board);
+
+    return board;
 }

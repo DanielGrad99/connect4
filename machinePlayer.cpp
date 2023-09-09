@@ -5,12 +5,15 @@
 #include <cassert>
 #include <iostream>
 #include <string>
-#include <thread>
 
 #define MIN_MOVES_FOR_CACHE 10
 
 std::unordered_map<std::string, MachinePlayer::Move> MachinePlayer::cache = {};
 std::mutex MachinePlayer::cache_lock = {};
+
+#define MAX_THREADS 1000
+std::mutex MachinePlayer::thread_lock = {};
+int MachinePlayer::curRunningThreads = 0;
 
 MachinePlayer::MachinePlayer() {}
 
@@ -19,24 +22,24 @@ int MachinePlayer::MakeMove(const Board& board, Piece piece) {
 
     if (surprise && iWon(piece, move.state)) {
         surprise = false;
-        std::cout << "omae wa shindeiru" << std::endl;
-        usleep(1000000);
+        // std::cout << "omae wa shindeiru" << std::endl;
+        // usleep(1000000);
     } else if (!iHaveLost && iWon(other(piece), move.state)) {
         iHaveLost = true;
         surprise = true;
 
-        std::cout << "nani!?" << std::endl;
-        usleep(1000000);
+        // std::cout << "nani!?" << std::endl;
+        // usleep(1000000);
     }
 
-    std::cout << "Making move - " << move.col << std::endl;
+    // std::cout << "Making move - " << move.col << std::endl;
 
     return move.col;
 }
 
 MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
                                                Piece piece) {
-    assert(originalBoard.IsGameOver() == GameState::PLAYING);
+    // assert(originalBoard.IsGameOver() == GameState::PLAYING);
 
     MachinePlayer::Move cachedMove = getCachedMove(originalBoard);
     if (cachedMove.col != -1) {
@@ -62,7 +65,11 @@ MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
     std::thread threads[BOARD_WIDTH];
 
     for (int col = 0; col < BOARD_WIDTH; ++col) {
-        writeResultForMove(originalBoard, piece, states + col, col);
+        tryRunInThread(
+            [&originalBoard, piece, &states, col] {
+                writeResultForMove(originalBoard, piece, states + col, col);
+            },
+            threads + col);
     }
 
     for (int i = 0; i < BOARD_WIDTH; ++i) {
@@ -108,7 +115,7 @@ void MachinePlayer::writeResultForMove(const Board& originalBoard, Piece piece,
     assert(0 <= col && col < BOARD_WIDTH);
     Board::MoveResult moveResult = board.PlacePiece(piece, col);
     assert(moveResult.ValidMove);
-    assert(board.NumEmptySlots() + 1 == originalBoard.NumEmptySlots());
+    // assert(board.NumEmptySlots() + 1 == originalBoard.NumEmptySlots());
 
     GameState state = moveResult.gameState;
 
@@ -151,38 +158,33 @@ MachinePlayer::Move MachinePlayer::getInstantWinMove(const Board& originalBoard,
 }
 
 MachinePlayer::Move MachinePlayer::getCachedMove(const Board& board) {
+    // Do not want to serialize in lock (so better here)
     std::string serializedBoard = to_string(board);
     std::string serializedFlipedBoard = to_string(board.FlipMe());
 
-    MachinePlayer::cache_lock.lock();
+    std::unique_lock<std::mutex> lck(MachinePlayer::cache_lock);
 
     if (auto search = MachinePlayer::cache.find(serializedBoard);
         search != MachinePlayer::cache.end()) {
-        MachinePlayer::cache_lock.unlock();
-
         return search->second;
     }
 
     if (auto search = MachinePlayer::cache.find(serializedBoard);
         search != MachinePlayer::cache.end()) {
-        MachinePlayer::cache_lock.unlock();
-
         MachinePlayer::Move move = search->second;
         move.col = BOARD_WIDTH - 1 - move.col;
 
         return move;
     }
 
-    MachinePlayer::cache_lock.unlock();
-
     return {-1};
 }
 
 void MachinePlayer::writeToCache(const Board& board, MachinePlayer::Move move) {
     if (board.NumEmptySlots() >= MIN_MOVES_FOR_CACHE) {
-        MachinePlayer::cache_lock.lock();
+        std::unique_lock<std::mutex> lck(MachinePlayer::cache_lock);
+
         cache[to_string(board)] = move;
-        MachinePlayer::cache_lock.unlock();
     }
 }
 
@@ -204,4 +206,29 @@ Piece MachinePlayer::other(Piece piece) {
     }
 
     assert(false);
+}
+
+void MachinePlayer::tryRunInThread(std::function<void()> work,
+                                   std::thread* threadDest) {
+    bool canRunInThread = false;
+    {
+        std::unique_lock<std::mutex> lck(MachinePlayer::thread_lock);
+        if (curRunningThreads < MAX_THREADS) {
+            canRunInThread = true;
+            ++curRunningThreads;
+        }
+    }
+
+    if (canRunInThread) {
+        *threadDest = std::thread([work] {
+            work();
+
+            std::unique_lock<std::mutex> lck(MachinePlayer::thread_lock);
+            --curRunningThreads;
+
+            assert(curRunningThreads >= 0);
+        });
+    } else {
+        work();
+    }
 }

@@ -29,11 +29,11 @@ class Board {
         GameState gameState;
     };
 
-    Board();
-    ~Board();
+    Board() noexcept;
+    ~Board() noexcept;
 
-    Board(const Board &other);
-    Board(Board &&other);
+    Board(const Board &other) noexcept;
+    Board(Board &&other) noexcept;
 
     Board FlipMe() const;
 
@@ -52,18 +52,20 @@ class Board {
     friend std::string to_string(const Board &board);
 
    private:
-    Piece mBoard[BOARD_WIDTH * BOARD_HEIGHT] = {Piece::NONE};
+    Piece *mBoard;
 
     bool isPieceWinning(int pos) const;
-    bool checkSequence(int pos, int (*getNext)(int), int (*getLast)(int)) const;
+    Piece getPiece(int pos) const; // if pos == -1 return Piece::NONE
 
     // Get next piece in direction
-    static int getPieceUp(int pos);
-    static int getPieceUpRight(int pos);
-    static int getPieceRight(int pos);
-    static int getPieceDownRight(int pos);
-    static int getPieceDown(int pos);
-    static int getPieceDownLeft(int pos);
-    static int getPieceLeft(int pos);
-    static int getPieceUpLeft(int pos);
+    static inline int getPieceUp(int pos);
+    static inline int getPieceUpRight(int pos);
+    static inline int getPieceRight(int pos);
+    static inline int getPieceDownRight(int pos);
+    static inline int getPieceDown(int pos);
+    static inline int getPieceDownLeft(int pos);
+    static inline int getPieceLeft(int pos);
+    static inline int getPieceUpLeft(int pos);
+
+    static Piece* allocateCopyOfBoard(const Board &other);
 };

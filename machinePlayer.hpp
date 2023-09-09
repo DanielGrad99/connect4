@@ -3,6 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <mutex>
+#include <thread>
+#include <functional>
 
 #include "player.hpp"
 
@@ -22,16 +24,23 @@ class MachinePlayer : public Player {
 
     static Move getInstantWinMove(const Board& board, Piece piece);
 
+    static bool iWon(Piece piece, GameState state);
+    static Piece other(Piece piece);
+
     // Cache
     static Move getCachedMove(const Board& board);
     static void writeToCache(const Board& board, Move move);
 
-    static bool iWon(Piece piece, GameState state);
-    static Piece other(Piece piece);
+    static std::unordered_map<std::string, MachinePlayer::Move> cache;
+    static std::mutex cache_lock;
+
+    // Threads
+    static void tryRunInThread(std::function<void()> work, std::thread* threadDest);
+
+    static std::mutex thread_lock;
+    static int curRunningThreads;
 
     bool surprise = true;
     bool iHaveLost = false;
 
-    static std::unordered_map<std::string, MachinePlayer::Move> cache;
-    static std::mutex cache_lock;
 };

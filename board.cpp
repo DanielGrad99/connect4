@@ -32,15 +32,28 @@ void Board::NewGame() {
     }
 }
 
-Piece Board::IsGameOver() const {
+GameState Board::IsGameOver() const {
+    bool allFilled = true;
 
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
         if (isBottomLeftMostStartOfWinning(i)) {
-            return mBoard[i];
+            if (mBoard[i] == Piece::RED) {
+                return GameState::RED_WON;
+            } else if (mBoard[i] == Piece::BLUE) {
+                return GameState::BLUE_WON;
+            } else {
+                assert(false);
+            }
         }
+
+        allFilled = allFilled && mBoard[i] != Piece::NONE;
     }
 
-    return Piece::NONE;
+    if (allFilled) {
+        return GameState::TIE;
+    }
+    
+    return GameState::PLAYING;
 }
 
 bool Board::PlacePiece(Piece piece, int column) {

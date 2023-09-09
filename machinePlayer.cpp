@@ -11,7 +11,7 @@
 std::unordered_map<std::string, MachinePlayer::Move> MachinePlayer::cache = {};
 std::mutex MachinePlayer::cache_lock = {};
 
-#define MAX_THREADS 1000
+#define MAX_THREADS 100
 std::mutex MachinePlayer::thread_lock = {};
 int MachinePlayer::curRunningThreads = 0;
 
@@ -158,6 +158,10 @@ MachinePlayer::Move MachinePlayer::getInstantWinMove(const Board& originalBoard,
 }
 
 MachinePlayer::Move MachinePlayer::getCachedMove(const Board& board) {
+    if (board.NumEmptySlots() < MIN_MOVES_FOR_CACHE) {
+        return {-1};
+    }
+
     // Do not want to serialize in lock (so better here)
     std::string serializedBoard = to_string(board);
     std::string serializedFlipedBoard = to_string(board.FlipMe());
@@ -174,7 +178,7 @@ MachinePlayer::Move MachinePlayer::getCachedMove(const Board& board) {
         MachinePlayer::Move move = search->second;
         move.col = BOARD_WIDTH - 1 - move.col;
 
-        return move;
+        return {BOARD_WIDTH - 1 - move.col, move.state};
     }
 
     return {-1};

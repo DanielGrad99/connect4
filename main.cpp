@@ -12,8 +12,9 @@ using namespace std;
 int main() {
     BoardDrawer boardDrawer = BoardDrawer(std::cout);
 
-    HumanPlayer p1{std::cin};
+    // HumanPlayer p1{std::cin};
     // HumanPlayer p2{std::cin};
+    MachinePlayer p1;
     MachinePlayer p2;
     Model model{p1, p2};
 

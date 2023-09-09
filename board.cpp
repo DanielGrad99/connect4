@@ -32,14 +32,15 @@ void Board::NewGame() {
     }
 }
 
-bool Board::IsGameOver() const {
+Piece Board::IsGameOver() const {
+
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
         if (isBottomLeftMostStartOfWinning(i)) {
-            return true;
+            return mBoard[i];
         }
     }
 
-    return false;
+    return Piece::NONE;
 }
 
 bool Board::PlacePiece(Piece piece, int column) {

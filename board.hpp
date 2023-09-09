@@ -6,7 +6,7 @@
 #define BOARD_HEIGHT 6
 #define NUM_IN_A_ROW 4
 
-enum class Piece { NONE, RED, BLUE };
+enum Piece { NONE, RED, BLUE };
 
 /*
 
@@ -32,7 +32,7 @@ class Board {
     Piece GetPiece(int row, int col) const;
 
     void NewGame();
-    bool IsGameOver() const;
+    Piece IsGameOver() const;
     bool PlacePiece(Piece piece, int column);  // column is in [0, 6]
 
    private:

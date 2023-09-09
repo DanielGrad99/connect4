@@ -97,6 +97,23 @@ Board::MoveResult Board::PlacePiece(Piece piece, int column) {
     return {false, GameState::PLAYING};
 }
 
+void Board::RemoveTopPiece(int column) {
+    assert(0 <= column && column < BOARD_WIDTH);
+
+    int pos;
+    for (int row = BOARD_HEIGHT - 1; row >= 0; --row) {
+        pos = column + row * BOARD_WIDTH;
+        if (mBoard[pos] == Piece::NONE) {
+            continue;
+        }
+
+        mBoard[pos] = Piece::NONE;
+        return;
+    }
+
+    assert(false);
+}
+
 bool Board::AnyAvailableMoves() const {
     int row = BOARD_HEIGHT - 1;
     for (int col = 0; col < BOARD_WIDTH; ++col) {

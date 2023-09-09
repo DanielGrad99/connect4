@@ -36,19 +36,32 @@ MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
                                                Piece piece) {
     assert(originalBoard.IsGameOver() == GameState::PLAYING);
 
-    std::string serializedBoard = to_string(originalBoard);
-    if (auto search = MachinePlayer::cache.find(serializedBoard);
-        search != MachinePlayer::cache.end()) {
-        return search->second;
+    MachinePlayer::Move cachedMove = getCachedMove(originalBoard);
+    if (cachedMove.col != -1) {
+        return cachedMove;
     }
 
-    std::string serializedFlipedBoard = to_string(originalBoard.FlipMe());
-    if (auto search = MachinePlayer::cache.find(serializedBoard);
-        search != MachinePlayer::cache.end()) {
-        MachinePlayer::Move move = search->second;
-        move.col = BOARD_WIDTH - 1 - move.col;
+    MachinePlayer::Move instantWin = getInstantWinMove(originalBoard, piece);
+    if (instantWin.col != -1) {
+        return instantWin;
+    }
 
-        return move;
+    MachinePlayer::Move instantLoss =
+        getInstantWinMove(originalBoard, other(piece));
+    if (instantLoss.col != -1) {
+        Board board{originalBoard};
+        Board::MoveResult moveResult = board.PlacePiece(piece, instantLoss.col);
+
+        if (moveResult.gameState != GameState::PLAYING) {
+            return {instantLoss.col, moveResult.gameState};
+        }
+
+        MachinePlayer::Move m = getBestMove(board, other(piece));
+        writeToCache(board, m);
+
+        assert(m.state != GameState::PLAYING);
+
+        return {instantLoss.col, m.state};
     }
 
     int mandatoryMove = -1;
@@ -75,20 +88,6 @@ MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
         GameState state = moveResult.gameState;
 
         if (state == GameState::PLAYING) {
-            // what if oponent makes the same move
-            {
-                Board board{originalBoard};
-                Board::MoveResult moveResult =
-                    board.PlacePiece(other(piece), col);
-                assert(moveResult.ValidMove);
-
-                GameState state = moveResult.gameState;
-                if (state == GameState::BLUE_WON ||
-                    state == GameState::RED_WON) {
-                    mandatoryMove = col;
-                }
-            }
-
             MachinePlayer::Move m;
             if (piece == Piece::RED) {
                 m = getBestMove(board, Piece::BLUE);
@@ -100,9 +99,7 @@ MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
                 mandatoryMoveOutcome = m.state;
             }
 
-            if (board.NumEmptySlots() >= MIN_MOVES_FOR_CACHE) {
-                cache[to_string(board)] = m;
-            }
+            writeToCache(board, m);
 
             assert(m.state != GameState::PLAYING);
 
@@ -138,6 +135,53 @@ MachinePlayer::Move MachinePlayer::getBestMove(const Board& originalBoard,
     }
 
     return {anyMove, GameState::RED_WON};
+}
+
+MachinePlayer::Move MachinePlayer::getInstantWinMove(const Board& originalBoard,
+                                                     Piece piece) {
+    Board board{originalBoard};
+    for (int col = 0; col < BOARD_WIDTH; ++col) {
+        if (board.GetPiece(BOARD_HEIGHT - 1, col) != Piece::NONE) {
+            // Cannot place on this row
+            continue;
+        }
+
+        Board::MoveResult moveResult = board.PlacePiece(piece, col);
+        assert(moveResult.ValidMove);
+
+        if (iWon(piece, moveResult.gameState)) {
+            return {col, moveResult.gameState};
+        }
+
+        board.RemoveTopPiece(col);
+    }
+
+    return {-1};
+}
+
+MachinePlayer::Move MachinePlayer::getCachedMove(const Board& board) {
+    std::string serializedBoard = to_string(board);
+    if (auto search = MachinePlayer::cache.find(serializedBoard);
+        search != MachinePlayer::cache.end()) {
+        return search->second;
+    }
+
+    std::string serializedFlipedBoard = to_string(board.FlipMe());
+    if (auto search = MachinePlayer::cache.find(serializedBoard);
+        search != MachinePlayer::cache.end()) {
+        MachinePlayer::Move move = search->second;
+        move.col = BOARD_WIDTH - 1 - move.col;
+
+        return move;
+    }
+
+    return {-1};
+}
+
+void MachinePlayer::writeToCache(const Board& board, MachinePlayer::Move move) {
+    if (board.NumEmptySlots() >= MIN_MOVES_FOR_CACHE) {
+        cache[to_string(board)] = move;
+    }
 }
 
 bool MachinePlayer::iWon(Piece piece, GameState state) {

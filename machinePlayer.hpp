@@ -17,6 +17,12 @@ class MachinePlayer : public Player {
     };
 
     Move getBestMove(const Board& board, Piece piece);
+    Move getInstantWinMove(const Board& board, Piece piece);
+
+    // Cache
+    Move getCachedMove(const Board& board);
+    void writeToCache(const Board& board, Move move);
+
     bool iWon(Piece piece, GameState state);
     Piece other(Piece piece);
 

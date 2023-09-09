@@ -43,6 +43,8 @@ class Board {
     void NewGame();
     GameState IsGameOver() const;
     MoveResult PlacePiece(Piece piece, int column);  // column is in [0, 6]
+    
+    void RemoveTopPiece(int column);
 
     bool AnyAvailableMoves() const;
     int NumEmptySlots() const;

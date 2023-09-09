@@ -24,29 +24,33 @@ enum GameState { PLAYING, TIE, BLUE_WON, RED_WON };
 
 class Board {
    public:
+    struct MoveResult {
+        bool ValidMove;
+        GameState gameState;
+    };
+
     Board();
     ~Board();
 
     Board(const Board &other);
     Board(Board &&other);
 
+    Board FlipMe() const;
+
     Piece GetPiece(int row, int col) const;
 
     // Game control
     void NewGame();
     GameState IsGameOver() const;
-    bool PlacePiece(Piece piece, int column);  // column is in [0, 6]
+    MoveResult PlacePiece(Piece piece, int column);  // column is in [0, 6]
+
+    bool AnyAvailableMoves() const;
+    int NumEmptySlots() const;
 
     friend std::string to_string(const Board &board);
 
    private:
     Piece mBoard[BOARD_WIDTH * BOARD_HEIGHT] = {Piece::NONE};
-
-    bool isBottomLeftMostStartOfWinning(int pos) const;
-
-    bool isWinningUp(int pos) const;
-    bool isWinningRight(int pos) const;
-    bool isWinningUpRight(int pos) const;
 
     bool isPieceWinning(int pos) const;
     bool checkSequence(int pos, int (*getNext)(int), int (*getLast)(int)) const;

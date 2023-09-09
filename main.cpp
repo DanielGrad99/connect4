@@ -4,6 +4,7 @@
 #include "board.hpp"
 #include "boardDrawer.hpp"
 #include "humanPlayer.hpp"
+#include "machinePlayer.hpp"
 #include "model.hpp"
 
 using namespace std;
@@ -12,7 +13,8 @@ int main() {
     BoardDrawer boardDrawer = BoardDrawer(std::cout);
 
     HumanPlayer p1{std::cin};
-    HumanPlayer p2{std::cin};
+    // HumanPlayer p2{std::cin};
+    MachinePlayer p2;
     Model model{p1, p2};
 
     const Board &board = model.GetBoard();

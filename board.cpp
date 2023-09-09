@@ -9,14 +9,27 @@ Board::~Board() {}
 
 Board::Board(const Board &other) {
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
-        mBoard[i] = mBoard[i];
+        mBoard[i] = other.mBoard[i];
     }
 }
 
 Board::Board(Board &&other) {
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
-        mBoard[i] = mBoard[i];
+        mBoard[i] = other.mBoard[i];
     }
+}
+
+Board Board::FlipMe() const {
+    Board board;
+
+    for (int row = 0; row < BOARD_HEIGHT; ++row) {
+        for (int col = 0; col < BOARD_WIDTH; ++col) {
+            board.mBoard[col + row * BOARD_WIDTH] =
+                mBoard[(BOARD_WIDTH - 1 - col) + row * BOARD_WIDTH];
+        }
+    }
+
+    return board;
 }
 
 Piece Board::GetPiece(int row, int col) const {
@@ -36,7 +49,7 @@ GameState Board::IsGameOver() const {
     bool allFilled = true;
 
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
-        if (isBottomLeftMostStartOfWinning(i)) {
+        if (isPieceWinning(i)) {
             if (mBoard[i] == Piece::RED) {
                 return GameState::RED_WON;
             } else if (mBoard[i] == Piece::BLUE) {
@@ -56,12 +69,38 @@ GameState Board::IsGameOver() const {
     return GameState::PLAYING;
 }
 
-bool Board::PlacePiece(Piece piece, int column) {
-    assert(column >= 0 && column < BOARD_WIDTH);
+Board::MoveResult Board::PlacePiece(Piece piece, int column) {
+    assert(0 <= column && column < BOARD_WIDTH);
 
+    int pos;
     for (int row = 0; row < BOARD_HEIGHT; ++row) {
-        if (mBoard[column + row * BOARD_WIDTH] == Piece::NONE) {
-            mBoard[column + row * BOARD_WIDTH] = piece;
+        pos = column + row * BOARD_WIDTH;
+        if (mBoard[pos] == Piece::NONE) {
+            mBoard[pos] = piece;
+
+            if (isPieceWinning(pos)) {
+                if (mBoard[pos] == Piece::RED) {
+                    return {true, GameState::RED_WON};
+                } else if (mBoard[pos] == Piece::BLUE) {
+                    return {true, GameState::BLUE_WON};
+                }
+
+                assert(false);
+            } else if (AnyAvailableMoves()) {
+                return {true, GameState::PLAYING};
+            } else {
+                return {true, GameState::TIE};
+            }
+        }
+    }
+
+    return {false, GameState::PLAYING};
+}
+
+bool Board::AnyAvailableMoves() const {
+    int row = BOARD_HEIGHT - 1;
+    for (int col = 0; col < BOARD_WIDTH; ++col) {
+        if (mBoard[col + row * BOARD_WIDTH] == Piece::NONE) {
             return true;
         }
     }
@@ -69,8 +108,18 @@ bool Board::PlacePiece(Piece piece, int column) {
     return false;
 }
 
+int Board::NumEmptySlots() const {
+    int count = 0;
+    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
+        if (mBoard[i] == Piece::NONE) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 std::string to_string(const Board &board) {
-    char ret[BOARD_WIDTH * BOARD_HEIGHT];
+    char ret[BOARD_WIDTH * BOARD_HEIGHT + 1] = {0};
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
         switch (board.mBoard[i]) {
             case Piece::NONE:
@@ -89,81 +138,6 @@ std::string to_string(const Board &board) {
     }
 
     return ret;
-}
-
-bool Board::isBottomLeftMostStartOfWinning(int pos) const {
-    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
-    return isWinningUp(pos) || isWinningRight(pos) || isWinningUpRight(pos);
-}
-
-bool Board::isWinningUp(int pos) const {
-    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
-
-    Piece piece = mBoard[pos];
-    if (piece == Piece::NONE) {
-        return false;
-    }
-
-    for (int i = 0; i < NUM_IN_A_ROW - 1; ++i) {
-        pos = getPieceUp(pos);
-        if (pos == -1) {
-            return false;
-        }
-
-        if (mBoard[pos] != piece) {
-            return false;
-        }
-    }
-
-    return true;
-}
-bool Board::isWinningRight(int pos) const {
-    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
-
-    Piece piece = mBoard[pos];
-    if (piece == Piece::NONE) {
-        return false;
-    }
-
-    for (int i = 0; i < NUM_IN_A_ROW - 1; ++i) {
-        pos = getPieceRight(pos);
-        if (pos == -1) {
-            return false;
-        }
-
-        if (mBoard[pos] != piece) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool Board::isWinningUpRight(int pos) const {
-    assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
-
-    Piece piece = mBoard[pos];
-    if (piece == Piece::NONE) {
-        return false;
-    }
-
-    for (int i = 0; i < NUM_IN_A_ROW - 1; ++i) {
-        pos = getPieceUp(pos);
-        if (pos == -1) {
-            return false;
-        }
-
-        pos = getPieceRight(pos);
-        if (pos == -1) {
-            return false;
-        }
-
-        if (mBoard[pos] != piece) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 bool Board::isPieceWinning(int pos) const {
@@ -216,6 +190,8 @@ bool Board::checkSequence(int pos, int (*getNext)(int),
             return true;
         }
     }
+
+    return false;
 }
 
 int Board::getPieceUp(int pos) {

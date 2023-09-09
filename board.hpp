@@ -32,19 +32,19 @@ class Board {
     Piece GetPiece(int row, int col) const;
 
     void NewGame();
-    bool IsGameOver();
+    bool IsGameOver() const;
     bool PlacePiece(Piece piece, int column);  // column is in [0, 6]
 
    private:
     Piece mBoard[BOARD_WIDTH * BOARD_HEIGHT] = {Piece::NONE};
 
-    int getPieceAbove(int pos);  // -1 if not found
-    int getPieceRight(int pos);  // -1 if not found
-    bool isBottomLeftMostStartOfWinning(int pos);
+    int getPieceAbove(int pos) const;  // -1 if not found
+    int getPieceRight(int pos) const;  // -1 if not found
+    bool isBottomLeftMostStartOfWinning(int pos) const;
 
-    bool isWinningUp(int pos);
-    bool isWinningRight(int pos);
-    bool isWinningUpRight(int pos);
+    bool isWinningUp(int pos) const;
+    bool isWinningRight(int pos) const;
+    bool isWinningUpRight(int pos) const;
 
     friend std::string to_string(const Board &board);
 };

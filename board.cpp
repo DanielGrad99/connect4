@@ -24,7 +24,7 @@ void Board::NewGame() {
     }
 }
 
-bool Board::IsGameOver() {
+bool Board::IsGameOver() const {
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
         if (isBottomLeftMostStartOfWinning(i)) {
             return true;
@@ -47,7 +47,7 @@ bool Board::PlacePiece(Piece piece, int column) {
     return false;
 }
 
-int Board::getPieceAbove(int pos) {
+int Board::getPieceAbove(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
 
     pos += BOARD_WIDTH;
@@ -58,7 +58,7 @@ int Board::getPieceAbove(int pos) {
     return pos;
 }
 
-int Board::getPieceRight(int pos) {
+int Board::getPieceRight(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
 
     pos += 1;
@@ -69,12 +69,12 @@ int Board::getPieceRight(int pos) {
     return pos;
 }
 
-bool Board::isBottomLeftMostStartOfWinning(int pos) {
+bool Board::isBottomLeftMostStartOfWinning(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
     return isWinningUp(pos) || isWinningRight(pos) || isWinningUpRight(pos);
 }
 
-bool Board::isWinningUp(int pos) {
+bool Board::isWinningUp(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
 
     Piece piece = mBoard[pos];
@@ -95,7 +95,7 @@ bool Board::isWinningUp(int pos) {
 
     return true;
 }
-bool Board::isWinningRight(int pos) {
+bool Board::isWinningRight(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
 
     Piece piece = mBoard[pos];
@@ -117,7 +117,7 @@ bool Board::isWinningRight(int pos) {
     return true;
 }
 
-bool Board::isWinningUpRight(int pos) {
+bool Board::isWinningUpRight(int pos) const {
     assert(pos >= 0 && pos < BOARD_WIDTH * BOARD_HEIGHT);
 
     Piece piece = mBoard[pos];

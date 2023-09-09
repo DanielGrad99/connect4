@@ -133,17 +133,20 @@ int Board::NumEmptySlots() const {
 }
 
 std::string to_string(const Board &board) {
-    char ret[BOARD_WIDTH * BOARD_HEIGHT + 1] = {0};
+    char ret[(BOARD_WIDTH * BOARD_HEIGHT) / 4 + 2] = {0};
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
+        const int shift = i % 4;
+        const int index = i / 4;
+
         switch (board.mBoard[i]) {
             case Piece::NONE:
-                ret[i] = ' ';
+                // ret[index] |= 0b0 << (shift * 2);
                 break;
             case Piece::RED:
-                ret[i] = 'R';
+                ret[index] |= 0b01 << (shift * 2);
                 break;
             case Piece::BLUE:
-                ret[i] = 'B';
+                ret[index] |= 0b10 << (shift * 2);
                 break;
             default:
                 assert(false);

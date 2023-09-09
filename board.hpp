@@ -26,7 +26,7 @@ class Board {
     Board();
     ~Board();
 
-    Board(Board &other);
+    Board(const Board &other);
     Board(Board &&other);
 
     Piece GetPiece(int row, int col) const;

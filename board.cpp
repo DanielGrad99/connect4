@@ -3,13 +3,21 @@
 #include <cassert>
 #include <utility>
 
-Board::Board() {}
+Board::Board() { NewGame(); }
 
 Board::~Board() {}
 
-Board::Board(Board &other) { NewGame(); }
+Board::Board(const Board &other) {
+    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
+        mBoard[i] = mBoard[i];
+    }
+}
 
-Board::Board(Board &&other) {}
+Board::Board(Board &&other) {
+    for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
+        mBoard[i] = mBoard[i];
+    }
+}
 
 Piece Board::GetPiece(int row, int col) const {
     assert(row >= 0 && row < BOARD_HEIGHT);
@@ -148,18 +156,18 @@ std::string to_string(const Board &board) {
     char ret[BOARD_WIDTH * BOARD_HEIGHT];
     for (int i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; ++i) {
         switch (board.mBoard[i]) {
-        case Piece::NONE:
-            ret[i] = ' ';
-            break;
-        case Piece::RED:
-            ret[i] = 'R';
-            break;
-        case Piece::BLUE:
-            ret[i] = 'B';
-            break;
-        default:
-            assert(false);
-            break;
+            case Piece::NONE:
+                ret[i] = ' ';
+                break;
+            case Piece::RED:
+                ret[i] = 'R';
+                break;
+            case Piece::BLUE:
+                ret[i] = 'B';
+                break;
+            default:
+                assert(false);
+                break;
         }
     }
 
